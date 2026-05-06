@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deaddictify — Break Free from Digital Addiction</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Deaddictify helps you reclaim focus and break digital addiction through immersive, science-backed behavioural tools." />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph (social sharing) -->
+  <meta property="og:title" content="Deaddictify — Break Free from Digital Addiction" />
+  <meta property="og:description" content="Reclaim your attention from the apps, feeds, and devices designed to keep you hooked." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://deaddictify.vercel.app" />
+
+  <!-- Theme colour for mobile browsers -->
+  <meta name="theme-color" content="#0a0a0f" />
+
+  <!-- Favicon (emoji fallback — no file needed) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚭</text></svg>" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --fg: #f0ede6;
+      --accent: #e8c547;
+      --muted: #5a5a6a;
+      --danger: #e04444;
+      --water: #2a9fd6;
+    }
+
+    html { scroll-behavior: auto; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── scroll container ── */
+    #scroll-container {
+      height: 600vh;
+      position: relative;
+    }
+
+    /* ── sticky canvas wrapper ── */
+    #canvas-wrap {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    #three-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── overlay text sections ── */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem, 12vw, 10rem);
+      letter-spacing: 0.08em;
+      color: var(--fg);
+      line-height: 1;
+      text-align: center;
+      text-shadow: 0 0 80px rgba(232,197,71,0.25);
+      transform: translateY(0);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .tagline {
+      font-size: clamp(0.75rem, 1.5vw, 1rem);
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      transition: opacity 0.6s ease;
+    }
+
+    /* scroll sections */
+    .section-text {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 10vh;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .section-text.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-text .label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 3.5rem);
+      letter-spacing: 0.1em;
+      text-align: center;
+      max-width: 700px;
+      line-height: 1.05;
+    }
+
+    .section-text .body {
+      font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+      font-weight: 300;
+      color: rgba(240,237,230,0.7);
+      text-align: center;
+      max-width: 560px;
+      margin-top: 1rem;
+      line-height: 1.7;
+    }
+
+    .section-text .pill {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      padding: 0.35em 1em;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    .section-text .pill.water { background: var(--water); color: #fff; }
+
+    /* scroll hint */
+    #scroll-hint {
+      position: fixed;
+      bottom: 6vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 20;
+      opacity: 1;
+      transition: opacity 0.5s;
+    }
+
+    #scroll-hint span {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .mouse {
+      width: 22px;
+      height: 34px;
+      border: 1.5px solid var(--muted);
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .mouse::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 2px;
+      animation: scroll-dot 1.6s ease infinite;
+    }
+
+    @keyframes scroll-dot {
+      0%   { top: 6px; opacity: 1; }
+      80%  { top: 17px; opacity: 0; }
+      100% { top: 6px; opacity: 0; }
+    }
+
+    /* splash overlay */
+    #splash-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(42,159,214,0.18) 0%, transparent 70%);
+      opacity: 0;
+      z-index: 5;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    /* progress bar */
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      background: var(--accent);
+      width: 0%;
+      z-index: 100;
+      transition: width 0.1s linear;
+    }
+
+    /* ── floating demo CTA ── */
+    .demo-btn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+
+      padding: 12px 22px;
+      border-radius: 999px;
+
+      background: rgba(232,197,71,0.12);
+      border: 1px solid rgba(232,197,71,0.35);
+
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+
+      color: var(--fg);
+      text-decoration: none;
+
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.5s ease, transform 0.5s ease, background 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+    }
+
+    .demo-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(232,197,71,0.25);
+    }
+
+    /* ── section demo CTA ── */
+    .section-demo-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      pointer-events: auto;
+
+      padding: 14px 28px;
+      border-radius: 999px;
+
+      background: var(--water);
+      color: #fff;
+
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      font-weight: 500;
+
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .section-demo-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(42,159,214,0.4);
+    }
+
+    /* grain overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="splash-overlay"></div>
+
+<a
+  href="https://calendly.com/kartiksachan231/30min"
+  target="_blank"
+  class="demo-btn"
+  id="demo-btn"
+>
+  Book a Demo
+</a>
+
+<div id="scroll-container">
+  <div id="canvas-wrap">
+    <canvas id="three-canvas"></canvas>
+  </div>
+</div>
+
+<!-- overlay always fixed -->
+<div id="overlay">
+  <div class="brand" id="brand-text">Dead<span>d</span>ictify</div>
+  <div class="tagline" id="brand-tagline">Break free from digital addiction</div>
+</div>
+
+<!-- scroll sections -->
+<div class="section-text" id="sec1">
+  <div class="pill">What We Do</div>
+  <div class="label">A Digital Wellness Platform</div>
+  <div class="body">Deaddictify helps you reclaim your attention from the apps, feeds, and devices designed to keep you hooked.</div>
+</div>
+
+<div class="section-text" id="sec2">
+  <div class="pill">The Problem</div>
+  <div class="label">Excessive Phone Use & Social Scrolling</div>
+  <div class="body">The average person touches their phone 2,617 times a day. Digital addiction is real — and it's costing you your focus, relationships, and peace of mind.</div>
+</div>
+
+<div class="section-text" id="sec3">
+  <div class="pill">Our Approach</div>
+  <div class="label">Personalised Interventions That Work</div>
+  <div class="body">We analyse your usage patterns and deliver science-backed nudges, mindful reminders, and structured break routines tailored to you — not a generic audience.</div>
+</div>
+
+<div class="section-text" id="sec4">
+  <div class="pill">Productivity Tools</div>
+  <div class="label">Build Habits. Reclaim Hours.</div>
+  <div class="body">From focus timers and app blockers to journaling prompts and weekly digital detox plans — our toolkit is built for sustainable behaviour change.</div>
+</div>
+
+<div class="section-text" id="sec5">
+  <div class="pill water">The Moment of Change</div>
+  <div class="label" style="color:var(--water)">Drop the Addiction.</div>
+  <div class="body">Every cigarette in the bucket is a habit surrendered. Your recovery starts with a single scroll — downward, into clarity.</div>
+  <a
+    href="https://calendly.com/kartiksachan231/30min"
+    target="_blank"
+    class="section-demo-btn"
+  >
+    Start Your Reset
+  </a>
+</div>
+
+<div id="scroll-hint">
+  <div class="mouse"></div>
+  <span>Scroll to begin</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ── renderer & scene ──────────────────────────────────────────
+const canvas = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.08);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0, 7);
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── lights ────────────────────────────────────────────────────
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(ambientLight);
+
+const keyLight = new THREE.DirectionalLight(0xfff4e0, 2.5);
+keyLight.position.set(4, 6, 5);
+keyLight.castShadow = true;
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0x2a9fd6, 1.2);
+rimLight.position.set(-4, 2, -3);
+scene.add(rimLight);
+
+const fillLight = new THREE.PointLight(0xe8c547, 0.8, 15);
+fillLight.position.set(0, 3, 4);
+scene.add(fillLight);
+
+// ── cigarette group ───────────────────────────────────────────
+const cigaretteGroup = new THREE.Group();
+scene.add(cigaretteGroup);
+
+// white paper body
+const bodyMat = new THREE.MeshStandardMaterial({
+  color: 0xf5f0e8,
+  roughness: 0.6,
+  metalness: 0,
+});
+const bodyGeo = new THREE.CylinderGeometry(0.12, 0.12, 2.6, 32);
+const body = new THREE.Mesh(bodyGeo, bodyMat);
+cigaretteGroup.add(body);
+
+// filter (orange/tan)
+const filterMat = new THREE.MeshStandardMaterial({ color: 0xc87941, roughness: 0.7 });
+const filterGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.45, 32);
+const filter = new THREE.Mesh(filterGeo, filterMat);
+filter.position.y = -1.525;
+cigaretteGroup.add(filter);
+
+// filter band
+const bandMat = new THREE.MeshStandardMaterial({ color: 0x8b5e3c, roughness: 0.5 });
+const bandGeo = new THREE.CylinderGeometry(0.125, 0.125, 0.07, 32);
+const band = new THREE.Mesh(bandGeo, bandMat);
+band.position.y = -1.275;
+cigaretteGroup.add(band);
+
+// tip (ember glow)
+const tipMat = new THREE.MeshStandardMaterial({
+  color: 0xff6b35,
+  emissive: 0xff4400,
+  emissiveIntensity: 2.5,
+  roughness: 0.3,
+});
+const tipGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.15, 32);
+const tip = new THREE.Mesh(tipGeo, tipMat);
+tip.position.y = 1.375;
+cigaretteGroup.add(tip);
+
+// ash cap
+const ashMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 1 });
+const ashGeo = new THREE.CylinderGeometry(0.09, 0.075, 0.25, 32);
+const ash = new THREE.Mesh(ashGeo, ashMat);
+ash.position.y = 1.55;
+cigaretteGroup.add(ash);
+
+// paper lines (rings for visual detail)
+for (let i = 0; i < 6; i++) {
+  const ringGeo = new THREE.TorusGeometry(0.122, 0.004, 8, 32);
+  const ringMat = new THREE.MeshStandardMaterial({ color: 0xd4cfc5, roughness: 0.8 });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = -0.9 + i * 0.38;
+  cigaretteGroup.add(ring);
+}
+
+// ember point light
+const emberLight = new THREE.PointLight(0xff5500, 3, 1.5);
+emberLight.position.y = 1.5;
+cigaretteGroup.add(emberLight);
+
+// initial tilt
+cigaretteGroup.rotation.z = 0.08;
+cigaretteGroup.position.set(0, 1, 0);
+
+// ── smoke particles ───────────────────────────────────────────
+const SMOKE_COUNT = 60;
+const smokeGeo = new THREE.BufferGeometry();
+const smokePositions = new Float32Array(SMOKE_COUNT * 3);
+const smokeData = [];
+
+for (let i = 0; i < SMOKE_COUNT; i++) {
+  smokeData.push({ x: (Math.random() - 0.5) * 0.3, y: 1.8 + Math.random() * 3, z: (Math.random() - 0.5) * 0.3, life: Math.random(), speed: 0.004 + Math.random() * 0.006 });
+}
+
+function updateSmoke() {
+  for (let i = 0; i < SMOKE_COUNT; i++) {
+    const d = smokeData[i];
+    d.y += d.speed;
+    d.x += Math.sin(d.life * 10) * 0.002;
+    d.life += 0.008;
+    if (d.y > 4.5 || d.life > 1) {
+      d.y = 1.7;
+      d.x = (Math.random() - 0.5) * 0.3;
+      d.z = (Math.random() - 0.5) * 0.3;
+      d.life = 0;
+    }
+    smokePositions[i * 3]     = d.x;
+    smokePositions[i * 3 + 1] = d.y;
+    smokePositions[i * 3 + 2] = d.z;
+  }
+  smokeGeo.attributes.position.needsUpdate = true;
+}
+
+smokeGeo.setAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
+const smokeMat = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.09, transparent: true, opacity: 0.35, depthWrite: false });
+const smokeParticles = new THREE.Points(smokeGeo, smokeMat);
+cigaretteGroup.add(smokeParticles);
+
+// ── bucket (water container) ──────────────────────────────────
+const bucketGroup = new THREE.Group();
+scene.add(bucketGroup);
+bucketGroup.visible = false;
+
+// outer cylinder
+const bucketOutMat = new THREE.MeshStandardMaterial({ color: 0x1a3a5c, roughness: 0.3, metalness: 0.7 });
+const bucketGeo = new THREE.CylinderGeometry(0.9, 0.7, 1.4, 32, 1, true);
+const bucketMesh = new THREE.Mesh(bucketGeo, bucketOutMat);
+bucketGroup.add(bucketMesh);
+
+// bottom
+const bottomGeo = new THREE.CircleGeometry(0.7, 32);
+const bottom = new THREE.Mesh(bottomGeo, bucketOutMat);
+bottom.rotation.x = -Math.PI / 2;
+bottom.position.y = -0.7;
+bucketGroup.add(bottom);
+
+// water surface
+const waterMat = new THREE.MeshStandardMaterial({
+  color: 0x2a9fd6,
+  transparent: true,
+  opacity: 0.82,
+  roughness: 0.1,
+  metalness: 0.2,
+});
+const waterGeo = new THREE.CircleGeometry(0.88, 32);
+const waterSurface = new THREE.Mesh(waterGeo, waterMat);
+waterSurface.rotation.x = -Math.PI / 2;
+waterSurface.position.y = 0.3;
+bucketGroup.add(waterSurface);
+
+// metallic rim
+const rimGeo = new THREE.TorusGeometry(0.92, 0.04, 8, 32);
+const rimMat = new THREE.MeshStandardMaterial({ color: 0x7ab0d6, metalness: 0.9, roughness: 0.2 });
+const bucketRim = new THREE.Mesh(rimGeo, rimMat);
+bucketRim.rotation.x = Math.PI / 2;
+bucketRim.position.y = 0.7;
+bucketGroup.add(bucketRim);
+
+bucketGroup.position.set(0, -3.5, 0);
+
+// ── water splash particles ────────────────────────────────────
+const SPLASH_COUNT = 80;
+const splashGeo = new THREE.BufferGeometry();
+const splashPos = new Float32Array(SPLASH_COUNT * 3);
+const splashVel = [];
+for (let i = 0; i < SPLASH_COUNT; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = 0.02 + Math.random() * 0.05;
+  splashVel.push({ vx: Math.cos(angle) * speed, vy: 0.04 + Math.random() * 0.08, vz: Math.sin(angle) * speed, active: false, life: 0 });
+  splashPos[i * 3] = 0; splashPos[i * 3 + 1] = 0; splashPos[i * 3 + 2] = 0;
+}
+splashGeo.setAttribute('position', new THREE.BufferAttribute(splashPos, 3));
+const splashMat = new THREE.PointsMaterial({ color: 0x6dd6ff, size: 0.12, transparent: true, opacity: 0.9, depthWrite: false });
+const splashParticles = new THREE.Points(splashGeo, splashMat);
+scene.add(splashParticles);
+splashParticles.visible = false;
+
+let splashActive = false;
+
+function triggerSplash(originY) {
+  splashActive = true;
+  splashParticles.visible = true;
+  for (let i = 0; i < SPLASH_COUNT; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.02 + Math.random() * 0.06;
+    splashVel[i].vx = Math.cos(angle) * speed;
+    splashVel[i].vy = 0.04 + Math.random() * 0.09;
+    splashVel[i].vz = Math.sin(angle) * speed;
+    splashVel[i].life = 1;
+    splashVel[i].active = true;
+    splashPos[i * 3]     = (Math.random() - 0.5) * 0.4;
+    splashPos[i * 3 + 1] = originY;
+    splashPos[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
+  }
+  splashGeo.attributes.position.needsUpdate = true;
+}
+
+function updateSplash() {
+  if (!splashActive) return;
+  let anyActive = false;
+  for (let i = 0; i < SPLASH_COUNT; i++) {
+    if (!splashVel[i].active) continue;
+    splashVel[i].vy -= 0.003; // gravity
+    splashPos[i * 3]     += splashVel[i].vx;
+    splashPos[i * 3 + 1] += splashVel[i].vy;
+    splashPos[i * 3 + 2] += splashVel[i].vz;
+    splashVel[i].life -= 0.02;
+    if (splashVel[i].life <= 0) { splashVel[i].active = false; } else { anyActive = true; }
+  }
+  splashGeo.attributes.position.needsUpdate = true;
+  splashMat.opacity = Math.max(0, splashVel[0].life);
+  if (!anyActive) { splashActive = false; splashParticles.visible = false; }
+}
+
+// ── background particles (stars) ─────────────────────────────
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(300 * 3);
+for (let i = 0; i < 300 * 3; i++) starPos[i] = (Math.random() - 0.5) * 40;
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.04, transparent: true, opacity: 0.4 });
+scene.add(new THREE.Points(starGeo, starMat));
+
+// ── scroll logic ──────────────────────────────────────────────
+const sections = [
+  document.getElementById('sec1'),
+  document.getElementById('sec2'),
+  document.getElementById('sec3'),
+  document.getElementById('sec4'),
+  document.getElementById('sec5'),
+];
+const brandEl    = document.getElementById('brand-text');
+const taglineEl  = document.getElementById('brand-tagline');
+const hintEl     = document.getElementById('scroll-hint');
+const progressEl = document.getElementById('progress');
+const splashOverlay = document.getElementById('splash-overlay');
+
+let scrollProgress = 0;
+let targetY = 1;
+let currentY = 1;
+let currentRot = 0;
+let targetRot = 0;
+
+// section thresholds (0–1)
+const THRESHOLDS = [0.0, 0.18, 0.36, 0.54, 0.72, 0.90];
+
+let splashFired = false;
+let lastSec = -1;
+
+const demoBtn = document.getElementById('demo-btn');
+
+window.addEventListener('scroll', () => {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  scrollProgress = Math.min(window.scrollY / maxScroll, 1);
+  progressEl.style.width = (scrollProgress * 100) + '%';
+
+  // reveal floating CTA after slight scroll
+  if (scrollProgress > 0.08) {
+    demoBtn.style.opacity = '1';
+    demoBtn.style.transform = 'translateY(0)';
+  } else {
+    demoBtn.style.opacity = '0';
+    demoBtn.style.transform = 'translateY(-10px)';
+  }
+
+  // hide scroll hint
+  if (scrollProgress > 0.02) hintEl.style.opacity = '0';
+
+  // fade brand header
+  const brandFade = Math.max(0, 1 - scrollProgress * 5);
+  brandEl.style.opacity    = brandFade;
+  taglineEl.style.opacity  = brandFade;
+  brandEl.style.transform  = `translateY(${-scrollProgress * 60}px)`;
+
+  // determine active section
+  let activeSec = -1;
+  for (let i = 0; i < THRESHOLDS.length - 1; i++) {
+    if (scrollProgress >= THRESHOLDS[i] && scrollProgress < THRESHOLDS[i + 1]) { activeSec = i; break; }
+    if (scrollProgress >= THRESHOLDS[THRESHOLDS.length - 1]) activeSec = THRESHOLDS.length - 2;
+  }
+
+  sections.forEach((s, i) => {
+    if (i === activeSec) { s.classList.add('visible'); }
+    else { s.classList.remove('visible'); }
+  });
+
+  // cigarette Y position: moves from top to bottom
+  // 0 → y=1  (top hero),  ~0.85 → y=-2.8 (just above bucket)
+  targetY = 1 - scrollProgress * 5.5;
+
+  // gentle tilt during fall
+  targetRot = scrollProgress * 0.6;
+
+  // bucket appears at ~0.75
+  if (scrollProgress > 0.72) {
+    bucketGroup.visible = true;
+    bucketGroup.position.y = -3.5 + (scrollProgress - 0.72) * 8;
+  } else {
+    bucketGroup.visible = false;
+  }
+
+  // splash & snuff at ~0.90
+  if (scrollProgress >= 0.88 && !splashFired) {
+    splashFired = true;
+    triggerSplash(-2.2);
+    splashOverlay.style.opacity = '0.7';
+    setTimeout(() => splashOverlay.style.opacity = '0', 1800);
+    tipMat.emissiveIntensity = 0;
+    emberLight.intensity = 0;
+    smokeParticles.visible = false;
+  }
+  if (scrollProgress < 0.85 && splashFired) {
+    splashFired = false;
+    tipMat.emissiveIntensity = 2.5;
+    emberLight.intensity = 3;
+    smokeParticles.visible = true;
+  }
+});
+
+// ── animation loop ────────────────────────────────────────────
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // lerp cigarette position
+  currentY += (targetY - currentY) * 0.06;
+  currentRot += (targetRot - currentRot) * 0.06;
+  cigaretteGroup.position.y = currentY;
+  cigaretteGroup.rotation.z = 0.08 + Math.sin(t * 0.8) * 0.015 + currentRot * 0.3;
+  cigaretteGroup.position.x = Math.sin(t * 0.5) * 0.04;
+
+  // when falling fast (scroll > 0.85) tumble
+  if (scrollProgress > 0.85) {
+    cigaretteGroup.rotation.z = currentRot * 2.5;
+    cigaretteGroup.rotation.x = currentRot * 1.5;
+  }
+
+  // ember flicker
+  emberLight.intensity = 3 + Math.sin(t * 12) * 0.8 + Math.sin(t * 7.3) * 0.4;
+  tipMat.emissiveIntensity = 2.5 + Math.sin(t * 9) * 0.5;
+
+  // water ripple
+  if (bucketGroup.visible) {
+    waterSurface.scale.x = 1 + Math.sin(t * 3) * 0.01;
+    waterSurface.scale.z = 1 + Math.cos(t * 2.5) * 0.01;
+  }
+
+  updateSmoke();
+  updateSplash();
+
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
